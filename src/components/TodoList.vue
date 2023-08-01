@@ -189,8 +189,8 @@ const changeLanguage = () => {
 onMounted(saveTodosToLocalStorage);
 </script>
 
-<style scoped>
+<style>
 .tox-notification {
-	display: none;
+	display: none !important;
 }
 </style>
