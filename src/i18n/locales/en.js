@@ -9,5 +9,7 @@ export default {
 		cancel: 'Cancel',
 		placeholder: 'Add a new TODO',
 		labelDueDate: 'Enter a due date/time for task: ',
+		task: 'Task',
+		dueDate: 'Due Date',
 	},
 };

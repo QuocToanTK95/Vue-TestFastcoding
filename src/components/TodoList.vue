@@ -2,7 +2,7 @@
 	<div class="min-h-screen bg-blue-100 py-8 px-4 flex items-center">
 		<div class="max-w-lg mx-auto bg-white rounded-lg shadow-lg p-4">
 			<!-- Language Select -->
-			<div class="mb-4 text-right">
+			<div class="mb-4 text-center">
 				<label for="languageSelect" class="mr-2">{{ t('app.language') }}:</label>
 				<select v-model="selectedLanguage" @change="changeLanguage" id="languageSelect">
 					<option v-for="lang in supportedLanguages" :key="lang" :value="lang">
@@ -28,44 +28,56 @@
 						v-model="newTodo.dueDate"
 						type="datetime-local"
 						required
-						class="w-full sm:w-auto rounded-lg border border-black p-2"
+						class="w-full sm:w-auto rounded-lg border border-darkgray p-2"
 					/>
 				</div>
 				<!-- Button Add -->
 				<button
 					type="submit"
-					class="mt-4 w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-lg"
+					:disabled="!newTodo.text"
+					class="mt-4 w-full sm:w-auto px-4 py-2 text-white rounded-lg"
+					:class="{ 'bg-blue-500': newTodo.text, 'bg-gray-400': !newTodo.text }"
 				>
 					{{ isEditingTodo ? t('app.save') : t('app.add') }}
 				</button>
 			</form>
-			<!-- List Todo -->
-			<ul>
-				<li
-					v-for="(todo, index) in todos"
-					:key="index"
-					class="flex justify-between items-center border-b border-gray-300 py-2"
-				>
-					<div class="flex-grow">
-						<span v-html="todo.text"></span>
-						<span class="block text-sm text-gray-500">{{ todo.dueDate }}</span>
-					</div>
-					<!-- Button Edit -->
-					<button
-						@click="editTodo(index)"
-						class="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+			<table v-if="todos.length > 0" class="w-full text-center">
+				<thead>
+					<tr>
+						<th>{{ t('app.task') }}</th>
+						<th>{{ t('app.dueDate') }}</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr
+						v-for="(todo, index) in todos"
+						:key="index"
+						class="border-b border-gray-300 py-2"
 					>
-						{{ t('app.edit') }}
-					</button>
-					<!-- Button Remove -->
-					<button
-						@click="removeTodo(index)"
-						class="ml-2 px-4 py-2 bg-red-500 text-white rounded-lg"
-					>
-						{{ t('app.remove') }}
-					</button>
-				</li>
-			</ul>
+						<td>
+							<span v-html="todo.text"></span>
+						</td>
+						<td>
+							<span class="text-sm text-gray-500">{{ todo.dueDate }}</span>
+						</td>
+						<td>
+							<button
+								@click="editTodo(index)"
+								class="px-4 py-2 mr-2 bg-green-500 text-white rounded-lg"
+							>
+								<font-awesome-icon icon="fa-solid fa-pen-to-square" />
+							</button>
+							<button
+								@click="removeTodo(index)"
+								class="px-4 py-2 bg-red-500 text-white rounded-lg"
+							>
+								<font-awesome-icon icon="fa-solid fa-trash" />
+							</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
 </template>
@@ -114,10 +126,10 @@ const addTodo = () => {
 		saveTodosToLocalStorage();
 		isEditingTodo.value = false;
 	}
-}
+};
 
 // Function to remove the task
-const removeTodo = (index) => {
+const removeTodo = index => {
 	const todoToRemove = cleanHtml(todos.value[index].text);
 	if (todoToRemove) {
 		const confirmMessage = `Are you sure you want to remove the task "${todoToRemove}"?`;
@@ -129,27 +141,27 @@ const removeTodo = (index) => {
 			});
 		}
 	}
-}
+};
 
 // Function to edit the task
-const editTodo = (index) => {
+const editTodo = index => {
 	isEditingTodo.value = true;
 	const todoToEdit = todos.value[index];
 	newTodo.value.text = cleanHtml(todoToEdit.text);
 	newTodo.value.dueDate = todoToEdit.dueDate;
 	todos.value.splice(index, 1);
 	saveTodosToLocalStorage();
-}
+};
 
 // Save data to local storage
 const saveTodosToLocalStorage = () => {
 	localStorage.setItem('todos', JSON.stringify(todos.value));
-}
+};
 
 // Function to remove HTML tags from the text
-const cleanHtml = (html) => {
+const cleanHtml = html => {
 	return html.replace(/<[^>]+>/g, '');
-}
+};
 
 // Check if the due date is within 5 minutes from now
 watchEffect(() => {
@@ -171,10 +183,14 @@ watchEffect(() => {
 // Function to handle language change
 const changeLanguage = () => {
 	i18n.locale = selectedLanguage.value;
-}
+};
 
 // Create the Local Storage when the component is mounted
 onMounted(saveTodosToLocalStorage);
 </script>
 
-<style></style>
+<style scoped>
+.tox-notification {
+	display: none;
+}
+</style>
