@@ -1,55 +1,71 @@
 <template>
-	<div class="container mx-auto p-4">
-		<h1 class="text-3xl font-bold mb-4">TODO List</h1>
-
-		<!-- Form to add new tasks -->
-		<form @submit.prevent="addTask" class="mb-4">
-			<div class="flex flex-col sm:flex-row gap-2">
-				<input
-					type="text"
-					v-model="newTask.text"
-					placeholder="Enter task description"
-					class="border rounded p-2 w-full sm:w-2/3"
-					required
-				/>
-				<input
-					type="datetime-local"
-					v-model="newTask.dueDate"
-					class="border rounded p-2 w-full sm:w-1/3"
-					required
-				/>
+	<div class="min-h-screen bg-blue-100 py-8 px-4 flex items-center">
+		<div class="max-w-lg mx-auto bg-white rounded-lg shadow-lg p-4">
+			<!-- Language Select -->
+			<div class="mb-4 text-right">
+				<label for="languageSelect" class="mr-2">{{ t('app.language') }}:</label>
+				<select v-model="selectedLanguage" @change="changeLanguage" id="languageSelect">
+					<option v-for="lang in supportedLanguages" :key="lang" :value="lang">
+						{{ lang }}
+					</option>
+				</select>
+			</div>
+			<!-- Title -->
+			<h1 class="text-2xl font-bold mb-4 text-center">{{ t('app.title') }}</h1>
+			<!-- Form Add Todo -->
+			<form @submit.prevent="addTodo" class="flex flex-col mb-4">
+				<!-- TinyMCE -->
+				<Editor
+					:init="configEditor"
+					v-model="newTodo.text"
+					:placeholder="t('app.placeholder')"
+				></Editor>
+				<!-- Due Date/Time -->
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-2">
+					<label for="dateTime" class="mb-2 sm:mb-0">{{ t('app.labelDueDate') }}</label>
+					<input
+						id="dateTime"
+						v-model="newTodo.dueDate"
+						type="datetime-local"
+						required
+						class="w-full sm:w-auto rounded-lg border border-black p-2"
+					/>
+				</div>
+				<!-- Button Add -->
 				<button
 					type="submit"
-					class="bg-blue-500 text-white py-2 px-4 rounded w-full sm:w-auto"
+					class="mt-4 w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-lg"
 				>
-					Add Task
+					{{ isEditingTodo ? t('app.save') : t('app.add') }}
 				</button>
-			</div>
-		</form>
-
-		<!-- List of tasks -->
-		<div v-if="tasks.length > 0">
+			</form>
+			<!-- List Todo -->
 			<ul>
 				<li
-					v-for="(task, index) in tasks"
+					v-for="(todo, index) in todos"
 					:key="index"
-					class="border p-4 my-2 flex flex-col sm:flex-row items-center justify-between"
+					class="flex justify-between items-center border-b border-gray-300 py-2"
 				>
-					<div>
-						<p class="text-lg">{{ task.text }}</p>
-						<p class="text-sm text-gray-500">{{ formatDate(task.dueDate) }}</p>
+					<div class="flex-grow">
+						<span v-html="todo.text"></span>
+						<span class="block text-sm text-gray-500">{{ todo.dueDate }}</span>
 					</div>
+					<!-- Button Edit -->
 					<button
-						@click="removeTask(index)"
-						class="bg-red-500 text-white py-2 px-4 rounded"
+						@click="editTodo(index)"
+						class="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg"
 					>
-						Delete
+						{{ t('app.edit') }}
+					</button>
+					<!-- Button Remove -->
+					<button
+						@click="removeTodo(index)"
+						class="ml-2 px-4 py-2 bg-red-500 text-white rounded-lg"
+					>
+						{{ t('app.remove') }}
 					</button>
 				</li>
 			</ul>
-		</div>
-		<div v-else>
-			<p>No tasks yet.</p>
 		</div>
 	</div>
 </template>
@@ -57,64 +73,108 @@
 <script setup>
 import { ref, onMounted, watchEffect } from 'vue';
 import { useToast } from 'vue-toastification';
+import Editor from '@tinymce/tinymce-vue';
+import { useI18n } from 'vue-i18n';
 
+// Get data from local storage
+const todos = ref(JSON.parse(localStorage.getItem('todos')) || []);
+
+const newTodo = ref({ text: '', dueDate: '' });
 const toast = useToast();
 
-// Initialize tasks from Local Storage
-const tasks = ref([]);
-
-// Initialize newTask object
-const newTask = ref({
-	text: '',
-	dueDate: '',
+// config tinymce
+const configEditor = ref({
+	height: 150,
+	menubar: false,
+	toolbar:
+		'undo redo | formatselect | bold italic backcolor | \
+           alignleft aligncenter alignright alignjustify | \
+           bullist numlist outdent indent | removeformat | help',
 });
 
-// Function to add a new task
-const addTask = () => {
-	if (newTask.value.text && newTask.value.dueDate) {
-		tasks.value.push({ ...newTask.value });
-		saveTasksToLocalStorage();
-		newTask.value.text = '';
-		newTask.value.dueDate = '';
+// Multi Language
+const { t } = useI18n();
+const supportedLanguages = ['en', 'vi'];
+const i18n = useI18n();
+const { locale } = useI18n();
+const selectedLanguage = ref(locale);
+
+// The flag to change the text of the button
+const isEditingTodo = ref(false);
+
+// Function to add the task
+const addTodo = () => {
+	if (newTodo.value.text.trim() !== '') {
+		todos.value.push({
+			text: newTodo.value.text,
+			dueDate: newTodo.value.dueDate,
+		});
+		newTodo.value.text = '';
+		newTodo.value.dueDate = '';
+		saveTodosToLocalStorage();
+		isEditingTodo.value = false;
 	}
-};
+}
 
-// Function to remove a task
-const removeTask = index => {
-	tasks.value.splice(index, 1);
-	saveTasksToLocalStorage();
-};
-
-// Function to format the due date for display
-const formatDate = dateString => {
-	const date = new Date(dateString);
-	return date.toLocaleString();
-};
-
-// Function to save tasks to Local Storage
-const saveTasksToLocalStorage = () => {
-	localStorage.setItem('tasks', JSON.stringify(tasks.value));
-};
-
-// Watch tasks and show toast notifications when due date/time is reached
-watchEffect(() => {
-	tasks.value.forEach(task => {
-		const dueDate = new Date(task.dueDate);
-		if (dueDate <= new Date() && !task.notified) {
-			toast.error(`Task "${task.text}" is due now!`);
-			task.notified = true;
+// Function to remove the task
+const removeTodo = (index) => {
+	const todoToRemove = cleanHtml(todos.value[index].text);
+	if (todoToRemove) {
+		const confirmMessage = `Are you sure you want to remove the task "${todoToRemove}"?`;
+		if (window.confirm(confirmMessage)) {
+			todos.value.splice(index, 1);
+			saveTodosToLocalStorage();
+			toast.success(`The task "${todoToRemove}" was removed!`, {
+				timeout: 3000, // Duration of the toast (in ms)
+			});
 		}
-	});
+	}
+}
+
+// Function to edit the task
+const editTodo = (index) => {
+	isEditingTodo.value = true;
+	const todoToEdit = todos.value[index];
+	newTodo.value.text = cleanHtml(todoToEdit.text);
+	newTodo.value.dueDate = todoToEdit.dueDate;
+	todos.value.splice(index, 1);
+	saveTodosToLocalStorage();
+}
+
+// Save data to local storage
+const saveTodosToLocalStorage = () => {
+	localStorage.setItem('todos', JSON.stringify(todos.value));
+}
+
+// Function to remove HTML tags from the text
+const cleanHtml = (html) => {
+	return html.replace(/<[^>]+>/g, '');
+}
+
+// Check if the due date is within 5 minutes from now
+watchEffect(() => {
+	if (todos.value.length > 0) {
+		const lastTodo = todos.value[todos.value.length - 1];
+		const dueDateTime = new Date(lastTodo.dueDate);
+		const currentTime = new Date();
+		const timeDiff = dueDateTime - currentTime;
+		if (!lastTodo.notified && timeDiff > 0 && timeDiff <= 5 * 60 * 1000) {
+			lastTodo.notified = true;
+			const cleanText = cleanHtml(lastTodo.text);
+			toast.error(`Task "${cleanText}" is due soon!`, {
+				timeout: 3000, // Duration of the toast (in ms)
+			});
+		}
+	}
 });
 
-// Function to load tasks from Local Storage
-const loadTasksFromLocalStorage = () => {
-	const storedTasks = localStorage.getItem('tasks');
-	tasks.value = storedTasks ? JSON.parse(storedTasks) : [];
-};
+// Function to handle language change
+const changeLanguage = () => {
+	i18n.locale = selectedLanguage.value;
+}
 
-// Load tasks from Local Storage when the component is mounted
-onMounted(() => {
-	loadTasksFromLocalStorage();
-});
+// Create the Local Storage when the component is mounted
+onMounted(saveTodosToLocalStorage);
 </script>
+
+<style></style>
