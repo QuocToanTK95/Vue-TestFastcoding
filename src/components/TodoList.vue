@@ -69,7 +69,7 @@
 								<font-awesome-icon icon="fa-solid fa-pen-to-square" />
 							</button>
 							<button
-								@click="removeTodo(index)"
+								@click="showRemoveModal(index)"
 								class="px-4 py-2 bg-red-500 text-white rounded-lg"
 							>
 								<font-awesome-icon icon="fa-solid fa-trash" />
@@ -79,6 +79,12 @@
 				</tbody>
 			</table>
 		</div>
+		<Modal
+			v-if="showModal"
+			:message="confirmMessage"
+			@confirmed="onConfirmRemove"
+			@cancelled="onCancelRemove"
+		/>
 	</div>
 </template>
 
@@ -87,6 +93,7 @@ import { ref, onMounted, watchEffect } from 'vue';
 import { useToast } from 'vue-toastification';
 import Editor from '@tinymce/tinymce-vue';
 import { useI18n } from 'vue-i18n';
+import Modal from './Modal.vue';
 
 // Get data from local storage
 const todos = ref(JSON.parse(localStorage.getItem('todos')) || []);
@@ -114,6 +121,11 @@ const selectedLanguage = ref(locale);
 // The flag to change the text of the button
 const isEditingTodo = ref(false);
 
+// Modal
+const showModal = ref(false);
+const confirmMessage = ref('');
+let taskToRemoveIndex;
+
 // Function to add the task
 const addTodo = () => {
 	if (newTodo.value.text.trim() !== '') {
@@ -132,14 +144,12 @@ const addTodo = () => {
 const removeTodo = index => {
 	const todoToRemove = cleanHtml(todos.value[index].text);
 	if (todoToRemove) {
-		const confirmMessage = `Are you sure you want to remove the task "${todoToRemove}"?`;
-		if (window.confirm(confirmMessage)) {
-			todos.value.splice(index, 1);
-			saveTodosToLocalStorage();
-			toast.success(`The task "${todoToRemove}" was removed!`, {
-				timeout: 3000, // Duration of the toast (in ms)
-			});
-		}
+		todos.value.splice(index, 1);
+		saveTodosToLocalStorage();
+		toast.success(`The task "${todoToRemove}" was removed!`, {
+			timeout: 3000, // Duration of the toast (in ms)
+		});
+		showModal.value = false;
 	}
 };
 
@@ -183,6 +193,27 @@ watchEffect(() => {
 // Function to handle language change
 const changeLanguage = () => {
 	i18n.locale = selectedLanguage.value;
+};
+
+// Function to show Modal
+const showRemoveModal = index => {
+	showModal.value = true;
+	const hideTiny = document.querySelector('.tox-editor-header');
+	hideTiny.style['z-index'] = 0;
+	taskToRemoveIndex = index;
+	confirmMessage.value = `Are you sure you want to delete "${cleanHtml(
+		todos.value[index].text
+	)}"?`;
+};
+
+// Function received emit from modal
+const onConfirmRemove = () => {
+	removeTodo(taskToRemoveIndex);
+};
+
+// Function received emit from modal
+const onCancelRemove = () => {
+	showModal.value = false;
 };
 
 // Create the Local Storage when the component is mounted
