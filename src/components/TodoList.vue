@@ -2,9 +2,9 @@
 	<div class="min-h-screen bg-blue-100 py-8 px-4 flex items-center">
 		<div class="max-w-lg mx-auto bg-white rounded-lg shadow-lg p-4">
 			<!-- Language Select -->
-			<div class="mb-4 text-center">
+			<div class="mb-4 text-right">
 				<label for="languageSelect" class="mr-2">{{ t('app.language') }}:</label>
-				<select v-model="selectedLanguage" @change="changeLanguage" id="languageSelect">
+				<select v-model="selectedLanguage" @change="changeLanguage" id="languageSelect" class="cursor-pointer">
 					<option v-for="lang in supportedLanguages" :key="lang" :value="lang">
 						{{ lang }}
 					</option>
@@ -15,20 +15,21 @@
 			<!-- Form Add Todo -->
 			<form @submit.prevent="addTodo" class="flex flex-col mb-4">
 				<!-- TinyMCE -->
+				<label class="mb-1">{{ t('app.task') }}</label>
 				<Editor
 					:init="configEditor"
 					v-model="newTodo.text"
 					:placeholder="t('app.placeholder')"
 				></Editor>
 				<!-- Due Date/Time -->
-				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-2">
-					<label for="dateTime" class="mb-2 sm:mb-0">{{ t('app.labelDueDate') }}</label>
+				<div class="flex flex-col my-2">
+					<label for="dateTime" class="mb-2 mt-4">{{ t('app.labelDueDate') }}</label>
 					<input
 						id="dateTime"
 						v-model="newTodo.dueDate"
 						type="datetime-local"
 						required
-						class="w-full sm:w-auto rounded-lg border border-darkgray p-2"
+						class="w-full rounded-lg border border-darkgray p-2"
 					/>
 				</div>
 				<!-- Button Add -->
@@ -61,19 +62,17 @@
 						<td>
 							<span class="text-sm text-gray-500">{{ todo.dueDate }}</span>
 						</td>
-						<td>
-							<button
+						<td class="flex justify-around">
+							<font-awesome-icon
+								icon="fa-solid fa-pen-to-square"
 								@click="editTodo(index)"
-								class="px-4 py-2 mr-2 bg-green-500 text-white rounded-lg"
-							>
-								<font-awesome-icon icon="fa-solid fa-pen-to-square" />
-							</button>
-							<button
+								class="text-green-500 cursor-pointer"
+							/>
+							<font-awesome-icon
+								icon="fa-solid fa-trash"
 								@click="showRemoveModal(index)"
-								class="px-4 py-2 bg-red-500 text-white rounded-lg"
-							>
-								<font-awesome-icon icon="fa-solid fa-trash" />
-							</button>
+								class="text-red-500 cursor-pointer"
+							/>
 						</td>
 					</tr>
 				</tbody>

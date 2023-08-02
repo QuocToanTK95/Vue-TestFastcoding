@@ -3,7 +3,7 @@ export default {
 		language: 'Ngôn ngữ',
 		title: 'DANH SÁCH VIỆC CẦN LÀM',
 		add: 'Thêm',
-		remove: 'Xóa',
+		delete: 'Xóa',
 		edit: 'Sửa',
 		save: 'Lưu',
 		cancel: 'Huỷ',
@@ -11,5 +11,6 @@ export default {
 		labelDueDate: 'Nhập ngày/thời gian hết hạn: ',
 		task: 'Việc cần làm',
 		dueDate: 'Ngày/giờ hết hạn ',
+		confirmDelete: 'Bạn có chắc muốn xoá'
 	},
 };
